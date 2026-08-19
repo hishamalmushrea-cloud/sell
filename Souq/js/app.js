@@ -222,6 +222,11 @@
     CHAPTERS.forEach(c=>{
       html+='<li><button class="nav-item" data-route="'+c.id+'"><span class="ni-num">'+c.num+'</span><span>'+esc(c.label)+'</span></button></li>';
     });
+    html+='<li class="nav-label">دليل رائد الأعمال</li>';
+    html+=navItem('guide','📖','فهرس الدليل','c-amber');
+    (typeof GUIDE!=='undefined'?GUIDE:[]).forEach(c=>{
+      html+='<li><button class="nav-item" data-route="'+c.id+'"><span class="ni-num '+c.color+'" style="color:#fff">'+c.icon+'</span><span>'+esc(c.label)+'</span></button></li>';
+    });
     html+='<li class="nav-label">استكشاف</li>';
     html+=navItem('phrases','🔎','قاعدة العبارات','c-blue');
     html+=navItem('functions','🗂️','التصنيف الوظيفي','c-teal');
@@ -319,8 +324,10 @@
   /* ============================================================
      التوجيه (Routing)
      ============================================================ */
-  const ROUTES=['home','chapters','phrases','about','favorites','functions','search','languages','mlphrases','mlcompare','mldialogues'].concat(CHAPTERS.map(c=>c.id), ML_DOCS.map(d=>d.id));
+  const GUIDE_LIST = (typeof GUIDE!=='undefined' && Array.isArray(GUIDE)) ? GUIDE : [];
+  const ROUTES=['home','chapters','guide','phrases','about','favorites','functions','search','languages','mlphrases','mlcompare','mldialogues'].concat(CHAPTERS.map(c=>c.id), ML_DOCS.map(d=>d.id), GUIDE_LIST.map(c=>c.id));
   const isChapter = id => CHAPTERS.some(c=>c.id===id);
+  const isGuide = id => GUIDE_LIST.some(c=>c.id===id);
 
   function route(){
     const parts=(location.hash||'#home').slice(1).split('?');
@@ -341,19 +348,21 @@
   function updateActiveNav(){
     $$('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.route===currentRoute));
     const isMl = currentRoute==='languages'||currentRoute==='mlphrases'||currentRoute==='mlcompare'||currentRoute==='mldialogues'||String(currentRoute).indexOf('ml-')===0;
-    let tab = currentRoute==='phrases'?'phrases':(currentRoute==='chapters'||isChapter(currentRoute))?'chapters':isMl?'languages':'home';
+    let tab = currentRoute==='phrases'?'phrases':(currentRoute==='chapters'||isChapter(currentRoute))?'chapters':(currentRoute==='guide'||isGuide(currentRoute))?'guide':isMl?'languages':'home';
     $$('.nav-tab').forEach(b=>b.classList.toggle('active', b.dataset.route===tab));
-    const map={home:SOUQ_META.appName, chapters:'أقسام الموسوعة', phrases:'قاعدة العبارات', about:'عن الموسوعة', favorites:'المفضلة', functions:'التصنيف الوظيفي', search:'البحث الشامل', languages:'بوابة اللغات', mlphrases:'عبارات متعددة اللغات', mlcompare:'مقارنة الوظائف', mldialogues:'حوارات تفاعلية'};
+    const map={home:SOUQ_META.appName, chapters:'أقسام الموسوعة', guide:'دليل رائد الأعمال', phrases:'قاعدة العبارات', about:'عن الموسوعة', favorites:'المفضلة', functions:'التصنيف الوظيفي', search:'البحث الشامل', languages:'بوابة اللغات', mlphrases:'عبارات متعددة اللغات', mlcompare:'مقارنة الوظائف', mldialogues:'حوارات تفاعلية'};
     let title=map[currentRoute];
-    if(!title){ const ch=CHAPTERS.find(c=>c.id===currentRoute); title=ch?ch.label:SOUQ_META.appName; }
+    if(!title){ const ch=CHAPTERS.find(c=>c.id===currentRoute); title=ch?ch.label:''; }
+    if(!title){ const g=GUIDE_LIST.find(c=>c.id===currentRoute); title=g?g.label:''; }
     if(!title){ const doc=ML_DOCS.find(d=>d.id===currentRoute); title=doc?doc.title:SOUQ_META.appName; }
     $('#sectionTitle').textContent=title;
   }
 
   function render(route){
     const c=$('#content');
-    const map={home:renderHome, chapters:renderChapters, phrases:renderPhrases, about:renderAbout, favorites:renderFavorites, functions:renderFunctions, search:renderSearch, languages:renderLanguages, mlphrases:renderMlPhrases, mlcompare:renderMlCompare, mldialogues:renderDialogues};
+    const map={home:renderHome, chapters:renderChapters, guide:renderGuideIndex, phrases:renderPhrases, about:renderAbout, favorites:renderFavorites, functions:renderFunctions, search:renderSearch, languages:renderLanguages, mlphrases:renderMlPhrases, mlcompare:renderMlCompare, mldialogues:renderDialogues};
     if(isChapter(route)){ c.innerHTML=renderChapter(route); }
+    else if(isGuide(route)){ c.innerHTML=renderGuideChapter(route); }
     else if(ML_DOCS.some(d=>d.id===route)){ c.innerHTML=renderMlDoc(route); }
     else { c.innerHTML=(map[route]||renderHome)(); }
     if(route==='phrases') bindPhrases();
@@ -382,14 +391,16 @@
     const m=SOUQ_META;
     const gates=[
       {id:'chapters', ic:'📘', t:'الموسوعة العربية', n:m.chaptersCount+' قسماً و'+m.phrasesCount+' عبارة — جذب، تفاوض، لهجات'},
+      {id:'guide', ic:'📖', t:'دليل رائد الأعمال', n:(m.guideCount||GUIDE_LIST.length)+' ملفاً كاملاً — من الفكرة إلى الأنظمة والثروة'},
       {id:'languages', ic:'🌐', t:'لغات السوق', n:'تركية · إندونيسية · طاجيكية · فرنسية · إنجليزية — '+m.mlPhrasesCount+' عبارة'},
-      {id:'search', ic:'🔍', t:'ابحث', n:'في الأقسام والعبارات والحوارات معاً'}
+      {id:'search', ic:'🔍', t:'ابحث', n:'في الأقسام والدليل والعبارات والحوارات معاً'}
     ];
     const gateHtml=gates.map(g=>
       '<button class="gate" data-go="'+g.id+'"><span class="gate-ic">'+g.ic+'</span><span class="gate-t">'+esc(g.t)+'</span><span class="gate-n">'+esc(g.n)+'</span></button>'
     ).join('');
     const chips=[
       {id:'phrases', t:'عبارات عربية'},
+      {id:'guide', t:'دليل الريادة'},
       {id:'mldialogues', t:'حوارات'},
       {id:'mlcompare', t:'مقارنة'},
       {id:'favorites', t:'المفضلة'}
@@ -418,6 +429,46 @@
 
   function renderChapters(){
     return '<div class="sec-intro">'+esc(SOUQ_META.appName)+' — '+esc(SOUQ_META.subtitle)+'. تصفّح '+SOUQ_META.chaptersCount+' قسماً منظّماً يغطي كل جوانب لغة السوق الحية.</div>'+chaptersGrid();
+  }
+
+  function guideGrid(){
+    const tiles=GUIDE_LIST.map(c=>
+      '<button class="section-tile" data-go="'+c.id+'">'+
+        '<span class="ic '+c.color+'">'+c.icon+'</span>'+
+        '<span class="t">'+esc(c.label)+'</span>'+
+        '<span class="n">'+(c.num<=19?('المجلد '+c.num):'مرجع')+'</span>'+
+      '</button>').join('');
+    return '<div class="section-grid">'+tiles+'</div>';
+  }
+
+  function renderGuideIndex(){
+    const n=GUIDE_LIST.length;
+    return '<div class="chapter-head"><div style="display:flex;align-items:center"><span class="ch-num">📖</span><div><h1>دليل رائد الأعمال</h1><p>من أول فكرة إلى أنظمة تعمل — كل الملفات كاملة بلا اختصار</p></div></div></div>'+
+      '<div class="sec-intro">مصدر البيانات: '+(SOUQ_META.guideSource||'mywork')+' — <b>'+n+'</b> ملفاً كما وردت في المستودع. ابدأ من «كيف تستخدم هذا الدليل» ثم اختر مسارك.</div>'+
+      guideGrid();
+  }
+
+  function renderGuideChapter(id){
+    const c=GUIDE_LIST.find(x=>x.id===id);
+    if(!c) return renderGuideIndex();
+    const toc=mdToc(c.raw);
+    const tocHtml = toc.length>1 ? '<nav class="toc" aria-label="محتويات المجلد"><div class="toc-title">📑 محتويات المجلد</div>'+toc.map(t=>'<a data-anchor="'+t.id+'"><span class="dot"></span>'+esc(t.text)+'</a>').join('')+'</nav>' : '';
+    const idx=GUIDE_LIST.findIndex(x=>x.id===id);
+    const prev=idx>0?GUIDE_LIST[idx-1]:null;
+    const next=idx<GUIDE_LIST.length-1?GUIDE_LIST[idx+1]:null;
+    const nav='<div class="filter-row" style="margin-top:18px">'+(prev?'<button class="btn-primary ghost" data-go="'+prev.id+'" style="flex:1">→ '+esc(prev.label)+'</button>':'<span style="flex:1"></span>')+(next?'<button class="btn-primary ghost" data-go="'+next.id+'" style="flex:1">'+esc(next.label)+' ←</button>':'<span style="flex:1"></span>')+'</div>';
+    return ''+
+      '<div class="chapter-head">'+
+        '<div style="display:flex;align-items:center">'+
+          '<span class="ch-num">'+c.icon+'</span>'+
+          '<div><h1>'+esc(c.title)+'</h1><p>دليل رائد الأعمال — ملف '+c.file+'</p></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="reading">'+
+        tocHtml+
+        '<div class="md-body">'+mdRender(c.raw, 'ar')+'</div>'+
+      '</div>'+
+      nav;
   }
 
   function renderChapter(id){
@@ -585,8 +636,9 @@
         '</div>'+
         '<div class="filter-row">'+
           '<select id="gsScope" class="filter-select">'+
-            '<option value="all">الكل (عربي + متعدد اللغات)</option>'+
+            '<option value="all">الكل (عربي + دليل + متعدد اللغات)</option>'+
             '<option value="chapters">الأقسام العربية فقط</option>'+
+            '<option value="guide">دليل رائد الأعمال فقط</option>'+
             '<option value="phrases">العبارات العربية فقط</option>'+
             '<option value="ml">متعدد اللغات فقط</option>'+
           '</select>'+
@@ -602,7 +654,21 @@
     const box=$('#gsResults'); if(!box) return;
     if(!q){ box.innerHTML='<p style="text-align:center;color:var(--text-mute);padding:20px">اكتب كلمة للبحث في الموسوعة.</p>'; const c=$('#gsCount'); if(c)c.textContent=''; return; }
     let html=''; let total=0;
-    if(scope!=='phrases' && scope!=='ml'){
+    if((scope==='all' || scope==='guide')){
+      const gdRes=GUIDE_LIST.map(c=>({c,idx:c.raw.toLowerCase().indexOf(q)})).filter(x=>x.idx>=0);
+      if(gdRes.length){
+        total+=gdRes.length;
+        html+='<h3 style="margin:16px 0 8px;color:var(--teal-700)">📖 دليل رائد الأعمال ('+gdRes.length+')</h3>';
+        html+=gdRes.slice(0,60).map(({c})=>{
+          const idx=c.raw.toLowerCase().indexOf(q);
+          const start=Math.max(0,idx-40);
+          const snip=c.raw.substring(start,start+120).replace(/\n+/g,' ').replace(/\*\*/g,'').replace(/[#>*|]/g,'');
+          return '<button class="section-tile" data-go="'+c.id+'" style="text-align:right;align-items:flex-start">'+
+            '<span class="ic '+c.color+'">'+c.icon+'</span><span class="t">'+esc(c.label)+'</span><span class="n">…'+esc(snip)+'…</span></button>';
+        }).join('');
+      }
+    }
+    if(scope!=='phrases' && scope!=='ml' && scope!=='guide'){
       const chRes=CHAPTERS.map(c=>({c,idx:c.raw.toLowerCase().indexOf(q)})).filter(x=>x.idx>=0);
       if(chRes.length){
         total+=chRes.length;
@@ -628,7 +694,7 @@
         }).join('');
       }
     }
-    if(scope!=='chapters' && scope!=='ml'){
+    if(scope!=='chapters' && scope!=='ml' && scope!=='guide'){
       const phRes=PHRASES.filter(p=>(p.phrase+' '+p.msa+' '+p.notes+' '+p.situation+' '+p.country+' '+p.dialect).toLowerCase().includes(q));
       if(phRes.length){
         total+=phRes.length;
@@ -636,7 +702,7 @@
         html+=phRes.slice(0,40).map(phraseCard).join('');
       }
     }
-    if(scope!=='chapters' && scope!=='phrases'){
+    if(scope!=='chapters' && scope!=='phrases' && scope!=='guide'){
       const mlpRes=ML_PHRASES.filter(p=>(p.originalText+' '+p.arabic+' '+p.arabicTranslation+' '+p.arabicPronunciation+' '+p.country+' '+p.situation+' '+p.category+' '+p.literalTranslation+' '+p.culturalNotes).toLowerCase().includes(q));
       if(mlpRes.length){
         total+=mlpRes.length;

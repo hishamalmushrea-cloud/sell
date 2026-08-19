@@ -220,6 +220,109 @@ def read_ml_docs():
     return docs
 
 
+GUIDE_ICONS = {
+    0:  ("📖", "c-teal"),
+    1:  ("🏗️", "c-amber"),
+    2:  ("🧠", "c-blue"),
+    3:  ("🔎", "c-green"),
+    4:  ("📊", "c-purple"),
+    5:  ("💼", "c-orange"),
+    6:  ("🤝", "c-rose"),
+    7:  ("📣", "c-cyan"),
+    8:  ("💰", "c-amber"),
+    9:  ("⚙️", "c-slate"),
+    10: ("🗓️", "c-teal"),
+    11: ("📈", "c-green"),
+    12: ("⚖️", "c-rose"),
+    13: ("🤖", "c-blue"),
+    14: ("💡", "c-purple"),
+    15: ("📚", "c-orange"),
+    16: ("🚫", "c-rose"),
+    17: ("🗺️", "c-cyan"),
+    18: ("🧪", "c-teal"),
+    19: ("📝", "c-amber"),
+}
+
+GUIDE_ORDER = [
+    "00-كيف-تستخدم-هذا-الدليل.md",
+    "المجلد-01-الأساسات.md",
+    "المجلد-02-الشخصية-والعقلية.md",
+    "المجلد-03-التعلم-واكتشاف-الفرص.md",
+    "المجلد-04-دراسة-السوق-وفهم-العميل.md",
+    "المجلد-05-المبيعات.md",
+    "المجلد-06-التفاوض-والتواصل.md",
+    "المجلد-07-التسويق-والسمعة-والعلامة.md",
+    "المجلد-08-المال-والمحاسبة-والتسعير.md",
+    "المجلد-09-التشغيل-والفريق-والقيادة.md",
+    "المجلد-10-التخطيط-والتنفيذ-والعادات.md",
+    "المجلد-11-الاستراتيجية-والنمو-والثروة.md",
+    "المجلد-12-المخاطر-والقانون-والأزمات.md",
+    "المجلد-13-التقنية-والذكاء-الاصطناعي.md",
+    "المجلد-14-مكتبة-البرومبتس.md",
+    "المجلد-15-المكتبة-والقصص.md",
+    "المجلد-16-الأخطاء.md",
+    "المجلد-17-الرحلة-والخطط-والتمارين.md",
+    "المجلد-18-الاختبارات-والقاموس-والقوائم.md",
+    "ملحق-جمل-وأسئلة.md",
+    "README.md",
+    "_repo-readme.md",
+]
+
+
+def _md_title(raw, fallback):
+    for line in raw.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    return fallback
+
+
+def read_guide():
+    """كل ملفات دليل رائد الأعمال كما هي — لا يُحذف شيء."""
+    base = os.path.join(SRC, "guide")
+    chapters = []
+    seen = set()
+    ordered = list(GUIDE_ORDER)
+    if os.path.isdir(base):
+        extras = sorted(
+            fn for fn in os.listdir(base)
+            if fn.endswith(".md") and fn not in GUIDE_ORDER
+        )
+        ordered.extend(extras)
+    for i, fn in enumerate(ordered):
+        path = os.path.join(base, fn)
+        if not os.path.isfile(path) or fn in seen:
+            continue
+        seen.add(fn)
+        with open(path, encoding="utf-8") as f:
+            raw = f.read()
+        title = _md_title(raw, fn)
+        num = i
+        m = re.search(r"(\d{2})", fn)
+        if m:
+            num = int(m.group(1))
+        elif "ملحق" in fn:
+            num = 19
+        elif fn.startswith("README"):
+            num = 20
+        elif fn.startswith("_repo"):
+            num = 21
+        icon, color = GUIDE_ICONS.get(num, ("📄", "c-slate"))
+        label = title
+        label = re.sub(r"^المجلد\s*\d+\s*[—–-]\s*", "", label)
+        label = re.sub(r"^كيف تستخدم هذا الدليل\s*[—–-]?\s*", "كيف تستخدم الدليل — ", label)
+        chapters.append({
+            "id": f"gd{num:02d}" if fn not in ("README.md", "_repo-readme.md") else ("gd-about" if fn == "README.md" else "gd-repo"),
+            "num": num,
+            "file": fn,
+            "title": title,
+            "label": label or title,
+            "icon": icon,
+            "color": color,
+            "raw": raw,
+        })
+    return chapters
+
+
 def read_ml_phrases():
     path = os.path.join(SRC, 'multilingual', 'phrases-ml.csv')
     out = []
@@ -243,6 +346,7 @@ def main():
     ml_docs = read_ml_docs()
     ml_phrases = read_ml_phrases()
     ml_counts = {l["code"]: sum(1 for p in ml_phrases if p.get("targetLanguage") == l["code"]) for l in ML_LANGS}
+    guide = read_guide()
 
     countries = sorted({p["country"] for p in phrases if p["country"]})
     dialects = sorted({p["dialect"] for p in phrases if p["dialect"]})
@@ -262,6 +366,8 @@ def main():
         "mlPhrasesCount": len(ml_phrases),
         "mlLanguages": [l["name"] for l in ML_LANGS],
         "mlLangCounts": ml_counts,
+        "guideCount": len(guide),
+        "guideSource": "مشروع mywork — فرع arena/01a01b01-mywork",
         "countries": countries,
         "dialects": dialects,
         "situations": situations,
@@ -290,6 +396,8 @@ def main():
     out.append("")
     out.append("const PHRASES = " + json.dumps(phrases, ensure_ascii=False, indent=1) + ";")
     out.append("")
+    out.append("const GUIDE = " + json.dumps(guide, ensure_ascii=False, indent=1) + ";")
+    out.append("")
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
@@ -300,6 +408,7 @@ def main():
     print(f"   العبارات: {len(phrases)}")
     print(f"   الدول/المناطق: {len(countries)} | اللهجات: {len(dialects)} | المواقف: {len(situations)}")
     print(f"   الوثائق متعددة اللغات: {len(ml_docs)} | العبارات المتعددة اللغات: {len(ml_phrases)}")
+    print(f"   دليل رائد الأعمال: {len(guide)} ملفاً")
     print(f"   الحجم: {os.path.getsize(OUT)//1024} KB")
 
 if __name__ == "__main__":
