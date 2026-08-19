@@ -355,6 +355,21 @@
     });
 
     window.addEventListener('hashchange', route);
+
+    let tStartX=0, tStartY=0;
+    document.addEventListener('touchstart', e => {
+      if(e.touches.length>1) return;
+      tStartX=e.touches[0].screenX; tStartY=e.touches[0].screenY;
+    }, {passive:true});
+    document.addEventListener('touchend', e => {
+      if(e.changedTouches.length>1) return;
+      const dx = e.changedTouches[0].screenX - tStartX;
+      const dy = e.changedTouches[0].screenY - tStartY;
+      if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+        if(dx < 0 && tStartX > window.innerWidth - 40) openDrawer();
+        else if(dx > 0 && !$('#drawer').hidden) closeDrawer();
+      }
+    });
   }
 
   function openDrawer(){
@@ -423,12 +438,15 @@
 
   function render(route){
     const c=$('#content');
+    c.classList.remove('animate-enter');
+    void c.offsetWidth;
     const map={home:renderHome, chapters:renderChapters, guide:renderGuideIndex, journey:renderJourneyHome, phrases:renderPhrases, about:renderAbout, favorites:renderFavorites, functions:renderFunctions, search:renderSearch, languages:renderLanguages, mlphrases:renderMlPhrases, mlcompare:renderMlCompare, mldialogues:renderDialogues};
     if(isChapter(route)){ c.innerHTML=renderChapter(route); }
     else if(isGuide(route)){ c.innerHTML=renderGuideChapter(route); }
     else if(isWork(route)){ c.innerHTML=renderWork(route); }
     else if(ML_DOCS.some(d=>d.id===route)){ c.innerHTML=renderMlDoc(route); }
     else { c.innerHTML=(map[route]||renderHome)(); }
+    c.classList.add('animate-enter');
     if(route==='phrases') bindPhrases();
     if(route==='search') bindSearch();
     if(route==='home') bindHome();
@@ -674,10 +692,11 @@
 
   function renderPhrasesResults(){
     const list=getFilteredPhrases();
+    const q=$('#phSearch')?$('#phSearch').value:'';
     const cnt=$('#phCount'); if(cnt) cnt.innerHTML=list.length+' نتيجة';
     const box=$('#phResults'); if(!box) return;
     if(!list.length){ box.innerHTML='<p style="text-align:center;color:var(--text-mute);padding:24px">لا توجد نتائج مطابقة.</p>'; return; }
-    box.innerHTML=list.map(phraseCard).join('');
+    box.innerHTML=list.map(p=>phraseCard(p,q)).join('');
   }
 
   function bindPhrases(){
@@ -934,29 +953,29 @@
       openBtn;
   }
 
-  function mlPhraseCard(p){
+  function mlPhraseCard(p, q){
     const lm = ML_LANGS.find(l=>l.code===p.targetLanguage) || {flag:'🌐',name:''};
-    const b=(t,cls)=> t? '<span class="badge '+(cls||'')+'">'+esc(t)+'</span>' : '';
+    const b=(t,cls)=> t? '<span class="badge '+(cls||'')+'">'+high(t, q)+'</span>' : '';
     const isFav=favorites.includes(p.id);
     const arabicTxt = p.noDirectArabic==='yes' ? 'لا مقابل عربي مباشر' : (p.arabic||'');
     const showLiteral = p.literalTranslation && p.literalTranslation!==p.arabicTranslation && p.literalTranslation!==arabicTxt;
     const extra=
-      (showLiteral? '<div class="phrase-msa"><b>حرفياً:</b> '+esc(p.literalTranslation)+'</div>' : '')+
+      (showLiteral? '<div class="phrase-msa"><b>حرفياً:</b> '+high(p.literalTranslation, q)+'</div>' : '')+
       '<div class="phrase-meta">'+
         b(p.category,'teal')+b(p.subcategory,'blue')+b(p.situation,'purple')+b(p.register)+b(p.audience)+b(p.frequency,'rose')+b(p.confidence,'gold')+
         (p.noDirectArabic==='yes'?b('بلا مقابل عربي','amber'):'')+
       '</div>'+
-      (p.usageNotes? '<div class="phrase-notes"><b>متى تُقال:</b> '+esc(p.usageNotes)+'</div>' : '')+
-      (p.culturalNotes? '<div class="phrase-notes"><b>ملاحظة ثقافية:</b> '+esc(p.culturalNotes)+'</div>' : '')+
-      (p.alternatives? '<div class="phrase-notes"><b>بدائل:</b> <span dir="auto">'+esc(p.alternatives)+'</span></div>' : '')+
+      (p.usageNotes? '<div class="phrase-notes"><b>متى تُقال:</b> '+high(p.usageNotes, q)+'</div>' : '')+
+      (p.culturalNotes? '<div class="phrase-notes"><b>ملاحظة ثقافية:</b> '+high(p.culturalNotes, q)+'</div>' : '')+
+      (p.alternatives? '<div class="phrase-notes"><b>بدائل:</b> <span dir="auto">'+high(p.alternatives, q)+'</span></div>' : '')+
       relatedLangsBox(p);
     return '<div class="phrase-card ml-card" data-pid="'+esc(p.id)+'">'+
       '<button class="fav-star '+(isFav?'on':'')+'" data-pid="'+esc(p.id)+'" aria-label="مفضلة">'+(isFav?'★':'☆')+'</button>'+
-      '<div class="ml-langline">'+lm.flag+' '+esc(lm.name)+(p.country?' · '+esc(p.country):'')+'</div>'+
-      '<div class="say say-block">'+speakBtn(p.originalText, p.targetLanguage)+'<div class="phrase-main ml-orig" dir="auto">'+esc(p.originalText)+'</div></div>'+
-      (p.arabicPronunciation? '<div class="ml-pron">'+esc(p.arabicPronunciation)+'</div>' : '')+
-      (arabicTxt? '<div class="say say-inline">'+speakBtn(p.noDirectArabic==='yes'?'':(p.arabic||''),'ar')+'<div class="phrase-msa">'+esc(arabicTxt)+'</div></div>' : '')+
-      (p.arabicTranslation? '<div class="phrase-sense">'+esc(p.arabicTranslation)+'</div>' : '')+
+      '<div class="ml-langline">'+lm.flag+' '+high(lm.name, q)+(p.country?' · '+high(p.country, q):'')+'</div>'+
+      '<div class="say say-block">'+speakBtn(p.originalText, p.targetLanguage)+'<div class="phrase-main ml-orig" dir="auto">'+high(p.originalText, q)+'</div></div>'+
+      (p.arabicPronunciation? '<div class="ml-pron">'+high(p.arabicPronunciation, q)+'</div>' : '')+
+      (arabicTxt? '<div class="say say-inline">'+speakBtn(p.noDirectArabic==='yes'?'':(p.arabic||''),'ar')+'<div class="phrase-msa">'+high(arabicTxt, q)+'</div></div>' : '')+
+      (p.arabicTranslation? '<div class="phrase-sense">'+high(p.arabicTranslation, q)+'</div>' : '')+
       moreFold(extra, 'تفاصيل وملاحظات')+
     '</div>';
   }
@@ -995,10 +1014,11 @@
 
   function renderMlPhrasesResults(){
     const list=getFilteredMlPhrases();
+    const q=$('#mlSearch')?$('#mlSearch').value:'';
     const cnt=$('#mlCount'); if(cnt) cnt.innerHTML=list.length+' نتيجة';
     const box=$('#mlResults'); if(!box) return;
     if(!list.length){ box.innerHTML='<p style="text-align:center;color:var(--text-mute);padding:24px">لا توجد نتائج مطابقة.</p>'; return; }
-    box.innerHTML=list.map(mlPhraseCard).join('');
+    box.innerHTML=list.map(p=>mlPhraseCard(p,q)).join('');
   }
 
   function bindMlPhrases(){
@@ -1083,6 +1103,7 @@
     const tx=plainSpeak(text||String(text||'').trim());
     if(!tx) return '';
     const L=guessLang(tx, lang);
+    if(L === 'ar') return '';
     return '<button type="button" class="speak-btn icon-only" data-speak="'+encodeURIComponent(tx)+'" data-lang="'+esc(L)+'" aria-label="استمع للنطق" title="استمع">🔊</button>';
   }
 
