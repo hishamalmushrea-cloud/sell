@@ -915,16 +915,16 @@
       '</button>';
     }).join('');
     const cross=[
+      {id:'ml-00-manhaj', icon:'🧭', c:'c-slate', t:'المنهج', n:'سلّم الثقة والنطق'},
       {id:'mlcompare', icon:'🔁', c:'c-purple', t:'مقارنة الوظائف', n:'عبر اللغات'},
       {id:'mldialogues', icon:'💬', c:'c-rose', t:'حوارات تفاعلية', n:'استمع ومثّل الدور'},
       {id:'mlphrases', icon:'🔎', c:'c-blue', t:'قاعدة العبارات المتعددة', n:SOUQ_META.mlPhrasesCount+' عبارة'},
       {id:'ml-05-muqarana', icon:'🔁', c:'c-slate', t:'جداول المقارنة', n:'الوظيفة × ٦ لغات'},
+      {id:'ml-06-qawalib', icon:'📋', c:'c-slate', t:'قوالب جاهزة', n:'قابلة لإعادة الاستخدام'},
       {id:'ml-07-hiwarat', icon:'💬', c:'c-slate', t:'حوارات متعددة اللغات', n:'نفس الموقف'},
       {id:'ml-08-qamus', icon:'🔤', c:'c-slate', t:'قاموس مشترك', n:'كلمات وأنواع محلات'},
-      {id:'ml-06-qawalib', icon:'📋', c:'c-slate', t:'قوالب جاهزة', n:'قابلة لإعادة الاستخدام'},
       {id:'ml-09-tahthir-wa-masadir', icon:'⚠️', c:'c-slate', t:'محاذير ومصادر', n:'ما يحتاج تحققاً'},
       {id:'ml-10-tadrib', icon:'🎯', c:'c-slate', t:'تمارين مواقف', n:'أدوار ولعب'},
-      {id:'ml-00-manhaj', icon:'🧭', c:'c-slate', t:'المنهج', n:'سلّم الثقة والنطق'},
       {id:'ml-README', icon:'ℹ️', c:'c-slate', t:'عن الموسوعة الموازية', n:'المنهجية'}
     ];
     const crossHtml=cross.map(q=>'<button class="section-tile" data-go="'+q.id+'"><span class="ic '+q.c+'">'+q.icon+'</span><span class="t">'+esc(q.t)+'</span><span class="n">'+esc(q.n)+'</span></button>').join('');
