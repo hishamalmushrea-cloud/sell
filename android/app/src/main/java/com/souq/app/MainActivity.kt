@@ -1,7 +1,11 @@
 package com.souq.app
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
+import android.webkit.JavascriptInterface
+import java.util.Locale
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -18,14 +22,17 @@ import androidx.webkit.WebViewAssetLoader
  * يستضيف تطبيق موسوعة السوق (PWA) داخل WebView من ملفات assets.
  * المسار الآمن: https://appassets.androidplatform.net/assets/
  */
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var webView: WebView
     private lateinit var assetLoader: WebViewAssetLoader
+    private var tts: TextToSpeech? = null
+    private var ttsInitialized = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        tts = TextToSpeech(this, this)
 
         assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
@@ -56,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         webView.webChromeClient = WebChromeClient()
         webView.webViewClient = LocalContentWebViewClient(assetLoader)
+        webView.addJavascriptInterface(WebAppInterface(this), "AndroidTTS")
 
         ServiceWorkerControllerCompat.getInstance().setServiceWorkerClient(
             object : ServiceWorkerClientCompat() {
@@ -84,6 +92,29 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         webView.saveState(outState)
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            ttsInitialized = true
+        }
+    }
+
+    override fun onDestroy() {
+        tts?.stop()
+        tts?.shutdown()
+        super.onDestroy()
+    }
+
+    inner class WebAppInterface(private val mContext: Context) {
+        @JavascriptInterface
+        fun speak(text: String, langTag: String) {
+            if (ttsInitialized && tts != null) {
+                val locale = Locale.forLanguageTag(langTag)
+                tts?.language = locale
+                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+            }
+        }
     }
 
     private companion object {

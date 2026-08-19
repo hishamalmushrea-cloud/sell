@@ -1,4 +1,5 @@
 /* ===== الخطوط والإعدادات العامة ===== */
+[hidden] { display: none !important; }
 @font-face {
   font-family: 'Cairo';
   src: url('fonts/Cairo-Variable.ttf') format('truetype');
@@ -692,7 +693,6 @@ blockquote::before{content:"❝";position:absolute;left:12px;top:4px;font-size:2
 .empty-state b{display:block;color:var(--text);font-size:17px;margin-bottom:6px}
 
 .icon-btn,.fav-star,.speak-btn.wide,.chip,.lang-pill{min-height:40px}
-.speak-btn:not(.wide){min-width:40px;min-height:40px}
 
 [data-theme="dark"] .welcome-kicker,[data-theme="dark"] .continue-card .cc-k{color:var(--teal-500)}
 [data-theme="dark"] .header-kicker{opacity:.75}

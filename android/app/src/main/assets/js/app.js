@@ -1085,11 +1085,16 @@
     const tx=plainSpeak(text||String(text||'').trim());
     if(!tx) return '';
     const L=guessLang(tx, lang);
-    return '<button type="button" class="speak-btn wide" data-speak="'+encodeURIComponent(tx)+'" data-lang="'+esc(L)+'" aria-label="استمع للنطق">🔊 استمع</button>';
+    return '<button type="button" class="speak-btn icon-only" data-speak="'+encodeURIComponent(tx)+'" data-lang="'+esc(L)+'" aria-label="استمع للنطق" title="استمع">🔊</button>';
   }
 
   function speak(text, lang){
     if(!text) return;
+    if(window.AndroidTTS){
+      window.AndroidTTS.speak(text, TTS_LANG[lang] || 'ar-SA');
+      toast('🔊 يقرأ الآن…');
+      return;
+    }
     const syn = window.speechSynthesis;
     if(!syn || typeof SpeechSynthesisUtterance==='undefined'){
       toast('النطق غير متاح في هذا المتصفح');
