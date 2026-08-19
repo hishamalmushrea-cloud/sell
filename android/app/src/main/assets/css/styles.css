@@ -384,7 +384,7 @@ td{color:var(--text-soft)}
     content:attr(data-label);flex:0 0 38%;font-weight:800;color:var(--teal-700);font-size:12.5px;line-height:1.5;
   }
   [data-theme="dark"] .table-wrap td::before{color:var(--teal-500)}
-  .table-wrap td>*{flex:1;text-align:left}
+  .table-wrap td>*{flex:1;text-align:right}
 }
 
 /* أزرار النطق */
