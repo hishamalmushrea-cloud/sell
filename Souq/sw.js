@@ -1,5 +1,5 @@
 /* Service Worker — يعمل بدون إنترنت */
-const CACHE = 'souq-guide-v8';
+const CACHE = 'souq-guide-v9';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './css/styles.css',
   './css/fonts/Cairo-Variable.ttf',
   './js/data.js',
+  './js/work-data.js',
   './js/app.js',
   './icons/icon-192.svg',
   './icons/icon-512.svg'
