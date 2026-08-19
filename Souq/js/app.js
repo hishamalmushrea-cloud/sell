@@ -50,6 +50,12 @@
     $('#bottomNav').hidden=false;
     if(window.matchMedia('(min-width:900px)').matches){ $('#drawer').hidden=false; }
     if(window.speechSynthesis){ try{ speechSynthesis.getVoices(); speechSynthesis.addEventListener('voiceschanged', function(){}); }catch(e){} }
+    bindWelcome();
+    bindNavFilter();
+    if(!location.hash || location.hash==='#'){
+      const last=store.get('souq_last','');
+      if(last && last!=='home') location.hash=last;
+    }
     route();
   }
 
@@ -220,17 +226,17 @@
     html+=navItem('home','🏠','الرئيسية','c-teal');
     html+='<li class="nav-label">الأقسام</li>';
     CHAPTERS.forEach(c=>{
-      html+='<li><button class="nav-item" data-route="'+c.id+'"><span class="ni-num">'+c.num+'</span><span>'+esc(c.label)+'</span></button></li>';
+      html+='<li><button class="nav-item" data-route="'+c.id+'" data-label="'+esc(c.label)+'"><span class="ni-num">'+c.num+'</span><span>'+esc(c.label)+'</span></button></li>';
     });
     html+='<li class="nav-label">خطة 3 سنوات</li>';
     html+=navItem('journey','🚀','من موظف إلى مشروع','c-teal');
     (typeof SECTIONS!=='undefined'?SECTIONS:[]).filter(s=>s.id!=='home').forEach(s=>{
-      html+='<li><button class="nav-item" data-route="work-'+s.id+'"><span class="ni-num">'+s.num+'</span><span>'+esc(s.title)+'</span></button></li>';
+      html+='<li><button class="nav-item" data-route="work-'+s.id+'" data-label="'+esc(s.title)+'"><span class="ni-num">'+s.num+'</span><span>'+esc(s.title)+'</span></button></li>';
     });
     html+='<li class="nav-label">دليل رائد الأعمال</li>';
     html+=navItem('guide','📖','فهرس الدليل','c-amber');
     (typeof GUIDE!=='undefined'?GUIDE:[]).forEach(c=>{
-      html+='<li><button class="nav-item" data-route="'+c.id+'"><span class="ni-num '+c.color+'" style="color:#fff">'+c.icon+'</span><span>'+esc(c.label)+'</span></button></li>';
+      html+='<li><button class="nav-item" data-route="'+c.id+'" data-label="'+esc(c.label)+'"><span class="ni-num '+c.color+'" style="color:#fff">'+c.icon+'</span><span>'+esc(c.label)+'</span></button></li>';
     });
     html+='<li class="nav-label">استكشاف</li>';
     html+=navItem('phrases','🔎','قاعدة العبارات','c-blue');
@@ -240,7 +246,7 @@
     html+=navItem('languages','🌐','بوابة اللغات','c-teal');
     ML_LANGS.forEach(l=>{
       const d=ML_DOCS.find(x=>x.lang===l.code && x.role==='main');
-      if(d) html+='<li><button class="nav-item" data-route="'+d.id+'"><span class="ni-num '+l.color+'" style="color:#fff">'+l.flag+'</span><span>'+esc(l.name)+'</span></button></li>';
+      if(d) html+='<li><button class="nav-item" data-route="'+d.id+'" data-label="'+esc(l.name)+'"><span class="ni-num '+l.color+'" style="color:#fff">'+l.flag+'</span><span>'+esc(l.name)+'</span></button></li>';
     });
     html+=navItem('mlphrases','🔎','عبارات متعددة اللغات','c-blue');
     html+=navItem('mlcompare','🔁','مقارنة الوظائف','c-purple');
@@ -258,7 +264,39 @@
     });
   }
   function navItem(id,icon,title,color){
-    return '<li><button class="nav-item" data-route="'+id+'"><span class="ni-num '+color+'" style="color:#fff">'+icon+'</span><span>'+title+'</span></button></li>';
+    return '<li><button class="nav-item" data-route="'+id+'" data-label="'+esc(title)+'"><span class="ni-num '+color+'" style="color:#fff">'+icon+'</span><span>'+title+'</span></button></li>';
+  }
+
+  function bindNavFilter(){
+    const inp=$('#navFilter'); if(!inp) return;
+    inp.addEventListener('input',()=>{
+      const q=inp.value.trim().toLowerCase();
+      $$('#navList .nav-item').forEach(btn=>{
+        const lab=(btn.dataset.label||btn.textContent||'').toLowerCase();
+        btn.parentElement.hidden = !!(q && lab.indexOf(q)<0);
+      });
+      $$('#navList .nav-label').forEach(lab=>{
+        let n=lab.nextElementSibling, show=false;
+        while(n && !n.classList.contains('nav-label')){
+          if(n.tagName==='LI' && !n.hidden) show=true;
+          n=n.nextElementSibling;
+        }
+        lab.hidden=!!q && !show;
+      });
+    });
+  }
+
+  function bindWelcome(){
+    const sheet=$('#welcomeSheet');
+    if(!sheet) return;
+    if(!store.get('souq_welcome', false)){
+      sheet.hidden=false;
+    }
+    $('#welcomeStart')?.addEventListener('click',()=>{
+      store.set('souq_welcome', true);
+      sheet.hidden=true;
+      navigate('home');
+    });
   }
 
   function buildBottomNav(){
@@ -350,6 +388,7 @@
     let clean=parts[0]||'home';
     const params=new URLSearchParams(parts[1]||'');
     currentRoute = ROUTES.includes(clean)?clean:'home';
+    store.set('souq_last', currentRoute);
     activeFunc = currentRoute==='phrases' ? (params.get('func')||'') : '';
     currentMlLang = currentRoute==='mlphrases' ? (params.get('lang')||'') : '';
     currentMlQuery = currentRoute==='mlphrases' ? (params.get('q')||'') : '';
@@ -376,6 +415,10 @@
     }
     if(!title){ const doc=ML_DOCS.find(d=>d.id===currentRoute); title=doc?doc.title:SOUQ_META.appName; }
     $('#sectionTitle').textContent=title;
+    const kick=$('#headerKicker');
+    if(kick){
+      kick.textContent = isWork(currentRoute)?'خطة 3 سنوات':isGuide(currentRoute)?'دليل رائد الأعمال':isChapter(currentRoute)?'لغة السوق':isMl?'لغات السوق':'موسوعة السوق';
+    }
   }
 
   function render(route){
@@ -409,30 +452,60 @@
     return '<div class="section-grid">'+tiles+'</div>';
   }
 
+  function routeLabel(id){
+    if(!id) return '';
+    const map={home:'الرئيسية', chapters:'أقسام لغة السوق', guide:'فهرس دليل الريادة', journey:'خطة 3 سنوات', phrases:'قاعدة العبارات', about:'عن الموسوعة', favorites:'المفضلة', functions:'التصنيف الوظيفي', search:'البحث', languages:'بوابة اللغات', mlphrases:'عبارات متعددة اللغات', mlcompare:'مقارنة الوظائف', mldialogues:'حوارات تفاعلية'};
+    if(map[id]) return map[id];
+    const ch=CHAPTERS.find(c=>c.id===id); if(ch) return ch.label;
+    const g=GUIDE_LIST.find(c=>c.id===id); if(g) return g.label;
+    if(String(id).indexOf('work-')===0){
+      const ws=WORK_SECTIONS.find(s=>s.id===id.slice(5)); if(ws) return ws.title;
+    }
+    const doc=typeof ML_DOCS!=='undefined'?ML_DOCS.find(d=>d.id===id):null;
+    return doc?doc.title:id;
+  }
+
   function renderHome(){
     const m=SOUQ_META;
+    const last=store.get('souq_last','');
+    const lastOk=last && last!=='home';
+    const total=typeof DASHBOARD!=='undefined'?countWorkChecks():0;
+    const done=Object.values(store.get('re_checks',{})).filter(Boolean).length;
+    const pct=total?Math.round(done/total*100):0;
+    const continueHtml=lastOk?
+      '<button class="continue-card" data-go="'+esc(last)+'">'+
+        '<span class="cc-ic">▶️</span><span><span class="cc-k">أكمل من حيث توقفت</span>'+
+        '<div class="cc-t">'+esc(routeLabel(last))+'</div>'+
+        '<div class="cc-n">ضغطة واحدة تعيدك لنفس المكان</div></span></button>':'';
     const gates=[
-      {id:'chapters', ic:'📘', t:'الموسوعة العربية', n:m.chaptersCount+' قسماً و'+m.phrasesCount+' عبارة — جذب، تفاوض، لهجات'},
-      {id:'guide', ic:'📖', t:'دليل رائد الأعمال', n:(m.guideCount||GUIDE_LIST.length)+' ملفاً كاملاً — من الفكرة إلى الأنظمة والثروة'},
+      {id:'chapters', ic:'📘', t:'لغة السوق', n:m.chaptersCount+' قسماً و'+m.phrasesCount+' عبارة — ابدأ من هنا إن كنت تبيع اليوم'},
+      {id:'journey', ic:'🚀', t:'خطة 3 سنوات', n:'144 أسبوعاً + لوحة متابعة — للموظف الذي يبني مشروعه'},
+      {id:'guide', ic:'📖', t:'دليل رائد الأعمال', n:(m.guideCount||GUIDE_LIST.length)+' ملفاً مرجعياً — اقرأ عند الحاجة لا دفعة واحدة'},
       {id:'languages', ic:'🌐', t:'لغات السوق', n:'تركية · إندونيسية · طاجيكية · فرنسية · إنجليزية — '+m.mlPhrasesCount+' عبارة'},
-      {id:'search', ic:'🔍', t:'ابحث', n:'في الأقسام والدليل والعبارات والحوارات معاً'}
+      {id:'search', ic:'🔍', t:'ابحث في كل شيء', n:'أقسام، دليل، خطة، عبارات، وحوارات في مكان واحد'}
     ];
     const gateHtml=gates.map(g=>
       '<button class="gate" data-go="'+g.id+'"><span class="gate-ic">'+g.ic+'</span><span class="gate-t">'+esc(g.t)+'</span><span class="gate-n">'+esc(g.n)+'</span></button>'
     ).join('');
     const chips=[
       {id:'phrases', t:'عبارات عربية'},
-      {id:'journey', t:'خطة 3 سنوات'},
-      {id:'guide', t:'دليل الريادة'},
+      {id:'work-dashboard', t:'متابعتي'},
+      {id:'work-mistakes', t:'100 خطأ'},
       {id:'mldialogues', t:'حوارات'},
       {id:'mlcompare', t:'مقارنة'},
       {id:'favorites', t:'المفضلة'}
     ].map(c=>'<button class="chip" data-go="'+c.id+'">'+esc(c.t)+'</button>').join('');
     return ''+
       '<section class="hero">'+
-        '<h1>'+esc(m.appName)+'</h1>'+
-        '<p>كيف يتكلم بائع وزبون حقيقيان — بالعربية وخمس لغات.</p>'+
+        '<h1>ماذا تفعل الآن؟</h1>'+
+        '<p>اختر مساراً واحداً: تتكلم في السوق، تبني مشروعاً، أو تراجع المرجع.</p>'+
+        '<div class="hero-stats">'+
+          '<div class="hero-stat"><div class="v">'+m.phrasesCount+'</div><div class="l">عبارة عربية</div></div>'+
+          '<div class="hero-stat"><div class="v">'+(m.guideCount||22)+'</div><div class="l">ملف دليل</div></div>'+
+          '<div class="hero-stat"><div class="v">'+pct+'%</div><div class="l">تقدّم الخطة</div></div>'+
+        '</div>'+
       '</section>'+
+      continueHtml+
       '<div class="search-box home-search">'+
         '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 10-.7.7l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg>'+
         '<input id="homeSearch" type="search" placeholder="ابحث: غالي، Hoş geldiniz، تفاوض...">'+
@@ -676,7 +749,7 @@
     const q=$('#gsSearch')?$('#gsSearch').value.trim().toLowerCase():'';
     const scope=$('#gsScope')?$('#gsScope').value:'all';
     const box=$('#gsResults'); if(!box) return;
-    if(!q){ box.innerHTML='<p style="text-align:center;color:var(--text-mute);padding:20px">اكتب كلمة للبحث في الموسوعة.</p>'; const c=$('#gsCount'); if(c)c.textContent=''; return; }
+    if(!q){ box.innerHTML='<div class="empty-state"><b>ابدأ بكلمة واحدة</b>عبارة سوق، مهارة بيع، أو موضوع من الدليل.</div>'; const c=$('#gsCount'); if(c)c.textContent=''; return; }
     let html=''; let total=0;
     if((scope==='all' || scope==='journey') && typeof MISTAKES!=='undefined'){
       const hits=[];
@@ -740,7 +813,7 @@
         html+=phRes.slice(0,40).map(phraseCard).join('');
       }
     }
-    if(scope!=='chapters' && scope!=='phrases' && scope!=='guide'){
+    if(scope!=='chapters' && scope!=='phrases' && scope!=='guide' && scope!=='journey'){
       const mlpRes=ML_PHRASES.filter(p=>(p.originalText+' '+p.arabic+' '+p.arabicTranslation+' '+p.arabicPronunciation+' '+p.country+' '+p.situation+' '+p.category+' '+p.literalTranslation+' '+p.culturalNotes).toLowerCase().includes(q));
       if(mlpRes.length){
         total+=mlpRes.length;
@@ -749,7 +822,7 @@
       }
     }
     const cnt=$('#gsCount'); if(cnt) cnt.textContent=total+' نتيجة لـ «'+q+'»';
-    box.innerHTML = total ? html : '<p style="text-align:center;color:var(--text-mute);padding:24px">لا توجد نتائج مطابقة لـ «'+esc(q)+'».</p>';
+    box.innerHTML = total ? html : '<div class="empty-state"><b>لا نتائج لـ «'+esc(q)+'»</b>جرّب كلمة أقصر، أو بدّل نطاق البحث أعلاه.</div>';
   }
 
   function bindSearch(){
@@ -1449,3 +1522,4 @@
   }
 
 })();
+;

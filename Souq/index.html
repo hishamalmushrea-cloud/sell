@@ -15,6 +15,20 @@
   <title>موسوعة السوق</title>
 </head>
 <body>
+  <a class="skip-link" href="#content">تخطي إلى المحتوى</a>
+  <div id="welcomeSheet" class="welcome-sheet" hidden>
+    <div class="welcome-card" role="dialog" aria-labelledby="welcomeTitle">
+      <p class="welcome-kicker">مرحباً بك</p>
+      <h2 id="welcomeTitle">ثلاث طرق للبدء</h2>
+      <ol class="welcome-steps">
+        <li><b>لغة السوق</b> — عبارات ولهجات البائع والزبون.</li>
+        <li><b>خطة 3 سنوات</b> — مهام أسبوعية من الموظف إلى المشروع.</li>
+        <li><b>دليل الريادة</b> — الموسوعة الكاملة كمرجع طويل الأمد.</li>
+      </ol>
+      <p class="welcome-note">كل المحتوى موجود. اختر مساراً واحداً اليوم، والباقي يبقى في القائمة.</p>
+      <button type="button" id="welcomeStart" class="btn-primary">ابدأ من هنا</button>
+    </div>
+  </div>
   <div id="app">
     <!-- شاشة البداية -->
     <div id="splash" class="splash">
@@ -50,6 +64,7 @@
         <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
       </button>
       <div class="header-title">
+        <p class="header-kicker" id="headerKicker">موسوعة السوق</p>
         <h1 id="sectionTitle">موسوعة السوق</h1>
       </div>
       <div class="header-actions">
@@ -82,8 +97,12 @@
         </svg>
         <div>
           <h2>موسوعة السوق</h2>
-          <p>دليل لغة البائع والزبون</p>
+          <p>لغة · خطة · دليل</p>
         </div>
+      </div>
+      <div class="drawer-search">
+        <label class="sr-only" for="navFilter">تصفية القائمة</label>
+        <input id="navFilter" type="search" placeholder="ابحث في القائمة…" autocomplete="off">
       </div>
       <ul id="navList" class="nav-list"></ul>
       <div class="drawer-footer">
