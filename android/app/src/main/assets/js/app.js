@@ -291,13 +291,15 @@
   function bindWelcome(){
     const sheet=$('#welcomeSheet');
     if(!sheet) return;
+    const close=()=>{ store.set('souq_welcome', true); sheet.hidden=true; };
     if(!store.get('souq_welcome', false)){
       sheet.hidden=false;
+      setTimeout(()=>$('#welcomeStart')?.focus(), 50);
     }
-    $('#welcomeStart')?.addEventListener('click',()=>{
-      store.set('souq_welcome', true);
-      sheet.hidden=true;
-      navigate('home');
+    $('#welcomeStart')?.addEventListener('click',()=>{ close(); navigate('home'); });
+    sheet.addEventListener('click', e=>{ if(e.target===sheet) close(); });
+    document.addEventListener('keydown', e=>{
+      if(e.key==='Escape' && !sheet.hidden) close();
     });
   }
 
@@ -421,7 +423,11 @@
     $$('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.route===currentRoute));
     const isMl = currentRoute==='languages'||currentRoute==='mlphrases'||currentRoute==='mlcompare'||currentRoute==='mldialogues'||String(currentRoute).indexOf('ml-')===0;
     let tab = currentRoute==='phrases'?'phrases':(currentRoute==='chapters'||isChapter(currentRoute))?'chapters':(currentRoute==='guide'||isGuide(currentRoute))?'guide':isWork(currentRoute)?'guide':isMl?'languages':'home';
-    $$('.nav-tab').forEach(b=>b.classList.toggle('active', b.dataset.route===tab));
+    $$('.nav-tab').forEach(b=>{
+      const on=b.dataset.route===tab;
+      b.classList.toggle('active', on);
+      if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+    });
     const map={home:SOUQ_META.appName, chapters:'أقسام الموسوعة', guide:'دليل رائد الأعمال', journey:'خطة 3 سنوات', phrases:'قاعدة العبارات', about:'عن الموسوعة', favorites:'المفضلة', functions:'التصنيف الوظيفي', search:'البحث الشامل', languages:'بوابة اللغات', mlphrases:'عبارات متعددة اللغات', mlcompare:'مقارنة الوظائف', mldialogues:'حوارات تفاعلية'};
     let title=map[currentRoute];
     if(!title){ const ch=CHAPTERS.find(c=>c.id===currentRoute); title=ch?ch.label:''; }
