@@ -530,9 +530,7 @@
         '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 10-.7.7l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg>'+
         '<input id="homeSearch" type="search" placeholder="ابحث: غالي، Hoş geldiniz، تفاوض...">'+
       '</div>'+
-      '<div class="home-now"><h2>المسارات</h2></div>'+
       '<div class="gate-list">'+gateHtml+'</div>'+
-      '<div class="home-now"><h2>اختصارات</h2></div>'+
       '<div class="chip-row">'+chips+'</div>';
   }
 
@@ -785,7 +783,7 @@
       if(hits.length){
         total+=hits.length;
         html+='<h3 style="margin:16px 0 8px;color:var(--teal-700)">🚀 خطة 3 سنوات ('+hits.length+')</h3>';
-        html+=hits.slice(0,40).map(h=>'<button class="section-tile" data-go="'+h.go+'" style="text-align:right;align-items:flex-start"><span class="ic c-teal">📌</span><span class="t">'+high(h.t, q)+'</span><span class="n">'+high(h.n, q)+'</span></button>').join('');
+        html+=hits.slice(0,40).map(h=>'<button class="section-tile" data-go="'+h.go+'" style="text-align:right;align-items:flex-start"><span class="ic c-teal">📌</span><span class="t">'+esc(h.t)+'</span><span class="n">'+esc(h.n)+'</span></button>').join('');
       }
     }
     if((scope==='all' || scope==='guide')){

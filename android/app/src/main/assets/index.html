@@ -17,7 +17,7 @@
 <body>
   <a class="skip-link" href="#content">تخطي إلى المحتوى</a>
   <div id="welcomeSheet" class="welcome-sheet" hidden>
-    <div class="welcome-card" role="dialog" aria-labelledby="welcomeTitle">
+    <div class="welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
       <p class="welcome-kicker">مرحباً بك</p>
       <h2 id="welcomeTitle">ثلاث طرق للبدء</h2>
       <ol class="welcome-steps">
@@ -148,7 +148,7 @@
       <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M7.4 15.4L12 10.8l4.6 4.6L18 14l-6-6-6 6z"/></svg>
     </button>
 
-    <div id="toast" class="toast" hidden></div>
+    <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
   </div>
 
   <script src="js/data.js"></script>
